@@ -2,30 +2,37 @@
 Serializers for the user API View.
 Se importa el Modelo de usuarios que usa Django.
 """
-from django.contrib.auth import get_user_model
-
 from rest_framework import serializers
+from user import models
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Serializer for the user object."""
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer a user profile object."""
 
     class Meta:
-        model = get_user_model()
-        fields = ['email', 'password', 'name']
-        extra_kwargs = {'password': {'write_only': True, 'min_length': 5}}
+        model = models.User
+        fields = ('id', 'email', 'name', 'password')
+        extra_kwargs = {
+            'password': {
+                'write_only': True,
+                'style': {'input_type': 'password'}
+            }
+        }
 
     def create(self, validated_data):
-        """Create and return a user with encrypted password."""
-        return get_user_model().objects.create_user(**validated_data)
-
-    def update(self, instance, validated_data):
-        """Update and return user."""
-        password = validated_data.pop('password', None)
-        user = super().update(instance, validated_data)
-
-        if password:
-            user.set_password(password)
-            user.save()
+        """Create and return a new user"""
+        user = models.User.objects.create_user(
+            email=validated_data['email'],
+            name=validated_data['name'],
+            password=validated_data['password']
+        )
 
         return user
+
+    def update(self, instance, validated_data):
+        """Handle updating user account"""
+        if 'password' in validated_data:
+            password = validated_data.pop('password')
+            instance.set_password(password)
+
+        return super().update(instance, validated_data)

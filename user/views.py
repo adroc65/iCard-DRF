@@ -1,21 +1,22 @@
 """
 Views for the user API.
 """
-from rest_framework import generics, authentication, permissions
-from user.serializers import UserSerializer
+from rest_framework import filters
+from rest_framework import viewsets
+
+from user import serializers
+from user import models
 
 
-class CreateUserView(generics.CreateAPIView):
-    """Create a new user in the system."""
-    serializer_class = UserSerializer
+class UserProfileViewSet(viewsets.ModelViewSet):
+    """Handle creating, creating and updating profiles"""
+    serializer_class = serializers.UserProfileSerializer
+    queryset = models.User.objects.all()
 
+    # Se agrega validación por token.
+    # authentication_classes = (TokenAuthentication,)
+    # permission_classes = (permissions.UpdateOwnProfile,)
 
-class ManageUserView(generics.RetrieveUpdateAPIView):
-    """Manage the authenticated user."""
-    serializer_class = UserSerializer
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        """Retrieve and return the authenticated user."""
-        return self.request.user
+    # Se agregan filtros de busqueada.
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name', 'email',)

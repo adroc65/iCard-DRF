@@ -9,40 +9,53 @@ from django.contrib.auth.models import (
 )
 
 
-class UserManager(BaseUserManager):
-    """Manager for users."""
+class UserProfileManager(BaseUserManager):
+    """Manager for user profiles"""
 
-    def create_user(self, email, password=None, **extra_fields):
-        """Create, save and return a new user."""
+    def create_user(self, email, name, password=None):
+        """Create a new user profile"""
         if not email:
-            raise ValueError('User must have an email address.')
-        user = self.model(email=self.normalize_email(email), **extra_fields)
+            raise ValueError('Users must have an email address')
+
+        email = self.normalize_email(email)
+        user = self.model(email=email, name=name,)
+
         user.set_password(password)
         user.save(using=self._db)
 
         return user
 
-    def create_superuser(self, email, password):
-        """Create and return a new superuser."""
-        user = self.create_user(email, password)
-        user.is_staff = True
+    def create_superuser(self, email, name, password):
+        """Create and save a new superuser with given details"""
+        user = self.create_user(email, name, password)
+
         user.is_superuser = True
+        user.is_staff = True
         user.save(using=self._db)
 
         return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """User in the system."""
+    """Database model for users in the system"""
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    objects = UserManager()
+    objects = UserProfileManager()
 
-    """
-    Con la siguiente línea se indica al modelo de DJANGO, que el
-    username es el correo. Ya que por default es un usuario.
-    """
     USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+
+    def get_full_name(self):
+        """Retrieve full name for user"""
+        return self.name
+
+    def get_short_name(self):
+        """Retrieve short name of user"""
+        return self.name
+
+    def __str__(self):
+        """Return string representation of user"""
+        return self.email
